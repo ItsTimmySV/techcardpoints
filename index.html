@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sistema de Lealtad</title>
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .loyalty-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loyalty-card h1 {
+            font-size: 2.2rem;
+            color: #2d3748;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .content-section {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 15px;
+        }
+
+        .qr-container p {
+            font-size: 1.1rem;
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .qr-container img {
+            max-width: 180px;
+            height: auto;
+            padding: 10px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-container {
+            text-align: center;
+        }
+
+        .progress-container h2 {
+            color: #2d3748;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .circles {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .circle {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #a0aec0;
+            transition: all 0.3s ease;
+            position: relative;
+            background: white;
+        }
+
+        .circle.filled {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
+        }
+
+        .btn-secondary {
+            background: #cbd5e0;
+            border: none;
+        }
+
+        .btn-danger {
+            background: #fc8181;
+            border: none;
+            color: white;
+        }
+
+        .message {
+            text-align: center;
+            color: #2d3748;
+            font-weight: 500;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+
+        /* Mostrar puntos (cashback) */
+        .points-display {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-top: 10px;
+        }
+
+        /* Animación del regalo (igual que antes) */
+        .gift-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .gift-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transform: rotateX(20deg);
+            animation: float 2s ease-in-out infinite;
+        }
+
+        .gift-box,
+        .gift-lid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b6b, #ff8787);
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.5s;
+        }
+
+        .gift-lid {
+            height: 40px;
+            background: linear-gradient(45deg, #ff5252, #ff6b6b);
+            transform-origin: top;
+            transform: translateY(-20px);
+        }
+
+        .gift-ribbon {
+            position: absolute;
+            width: 40px;
+            height: 100%;
+            background: #ff8787;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .gift-ribbon::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 40px;
+            background: #ff8787;
+            transform: rotate(90deg);
+            top: 50%;
+            left: 0;
+            transform-origin: left;
+        }
+
+        .discount-text {
+            font-size: 2em;
+            color: white;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes float {
+            0%,
+            100% {
+                transform: rotateX(20deg) translateY(0);
+            }
+            50% {
+                transform: rotateX(20deg) translateY(-20px);
+            }
+        }
+
+        @keyframes openLid {
+            to {
+                transform: translateY(-20px) rotateX(-110deg);
+            }
+        }
+
+        @keyframes giftReveal {
+            0% {
+                transform: rotateX(20deg) scale(1);
+            }
+            50% {
+                transform: rotateX(20deg) scale(1.1);
+            }
+            100% {
+                transform: rotateX(20deg) scale(1);
+            }
+        }
+
+        .opening .gift-lid {
+            animation: openLid 0.5s forwards;
+        }
+
+        .opening .gift-container {
+            animation: giftReveal 0.5s 0.5s;
+        }
+
+        .opening .discount-text {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="loyalty-card">
+        <h1>Tarjeta de Lealtad</h1>
+        <div id="auth" class="auth-form">
+            <p>Inicia sesión con tu correo electrónico:</p>
+            <input
+                type="email"
+                id="email"
+                class="form-control"
+                placeholder="Correo Electrónico"
+            />
+            <input
+                type="password"
+                id="password"
+                class="form-control"
+                placeholder="Contraseña"
+            />
+            <div class="btn-container">
+                <button id="register" class="btn btn-primary">Registrarse</button>
+                <button id="login" class="btn btn-secondary">Iniciar Sesión</button>
+            </div>
+        </div>
+        <div id="card" style="display: none;">
+            <div class="content-section">
+                <div class="qr-container">
+                    <p>Tu código QR personal:</p>
+                    <div id="qrcode"></div>
+                </div>
+                <div class="progress-container">
+                    <h2>Tu Progreso</h2>
+                    <div class="circles" id="circles">
+                        <div class="circle" data-index="1">1</div>
+                        <div class="circle" data-index="2">2</div>
+                        <div class="circle" data-index="3">3</div>
+                        <div class="circle" data-index="4">4</div>
+                        <div class="circle" data-index="5">5</div>
+                        <div class="circle" data-index="6">6</div>
+                    </div>
+                </div>
+                <!-- Mostrar los puntos/cashback acumulados -->
+                <div class="points-display">
+                    Puntos Acumulados: <span id="pointsSpan">0</span>
+                </div>
+            </div>
+            <div class="btn-container">
+                <!-- Botón para canjear descuento, se muestra a las 6 compras -->
+                <button
+                    class="btn btn-primary"
+                    id="redeem"
+                    style="display: none;"
+                >
+                    Canjear Descuento
+                </button>
+                <button class="btn btn-danger" id="logoutButton">
+                    Cerrar Sesión
+                </button>
+            </div>
+            <p class="message" id="message"></p>
+        </div>
+    </div>
+
+    <!-- Gift Animation Overlay -->
+    <div class="gift-overlay" id="giftOverlay">
+        <div class="gift-container" id="giftContainer">
+            <div class="gift-lid"></div>
+            <div class="gift-box">
+                <div class="gift-ribbon"></div>
+            </div>
+            <div class="discount-text" id="discountText"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+    ></script>
+    <script
+        src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"
+    ></script>
+    <script
+        src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth-compat.js"
+    ></script>
+    <script
+        src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore-compat.js"
+    ></script>
+    <script>
+        // Configuración de Firebase
+        // Configuración de Firebase
+        const firebaseConfig = {
+  apiKey: "AIzaSyBV7aFTNp8BNZoT-3kJvOWhrR5fA_mrUos",
+  authDomain: "techcard-ac30e.firebaseapp.com",
+  projectId: "techcard-ac30e",
+  storageBucket: "techcard-ac30e.firebasestorage.app",
+  messagingSenderId: "193812816787",
+  appId: "1:193812816787:web:4096953d9ec882fed03e66"
+};
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Referencias a elementos del DOM
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+        const registerButton = document.getElementById("register");
+        const loginButton = document.getElementById("login");
+        const logoutButton = document.getElementById("logoutButton");
+        const cardSection = document.getElementById("card");
+        const authSection = document.getElementById("auth");
+        const circles = document.querySelectorAll(".circle");
+        const redeemButton = document.getElementById("redeem");
+        const message = document.getElementById("message");
+        const qrcodeDiv = document.getElementById("qrcode");
+        const pointsSpan = document.getElementById("pointsSpan");
+
+        const giftOverlay = document.getElementById("giftOverlay");
+        const giftContainer = document.getElementById("giftContainer");
+        const discountText = document.getElementById("discountText");
+
+        let userId;
+
+        // Descuentos aleatorios (si mantienes este sistema)
+        const discounts = [
+            { discount: 10, probability: 40 },
+            { discount: 20, probability: 30 },
+            { discount: 30, probability: 15 },
+            { discount: 50, probability: 10 },
+            { discount: 70, probability: 4 },
+            { discount: 90, probability: 1 },
+        ];
+
+        function getRandomDiscount() {
+            const totalProbability = discounts.reduce(
+                (sum, item) => sum + item.probability,
+                0
+            );
+            const random = Math.random() * totalProbability;
+            let cumulative = 0;
+            for (const item of discounts) {
+                cumulative += item.probability;
+                if (random < cumulative) {
+                    return item.discount;
+                }
+            }
+            return discounts[0].discount;
+        }
+
+        // Observador de Auth
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                userId = user.uid;
+                setupRealTimeListener(userId);
+                cardSection.style.display = "block";
+                authSection.style.display = "none";
+            } else {
+                authSection.style.display = "block";
+                cardSection.style.display = "none";
+            }
+        });
+
+        // Registro
+        registerButton.addEventListener("click", () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    userId = userCredential.user.uid;
+                    // Creamos el doc con 0 compras y 0 puntos
+                    db.collection("loyaltyCards")
+                        .doc(userId)
+                        .set({ purchases: 0, points: 0 });
+                })
+                .catch((error) => console.error("Error registrando usuario", error));
+        });
+
+        // Login
+        loginButton.addEventListener("click", () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            auth.signInWithEmailAndPassword(email, password).catch((error) => {
+                console.error("Error iniciando sesión", error);
+                alert("Error al iniciar sesión");
+            });
+        });
+
+        // Logout
+        logoutButton.addEventListener("click", () => {
+            auth.signOut().then(() => {
+                alert("Sesión cerrada exitosamente.");
+            });
+        });
+
+        // Escuchar cambios en Firestore
+        function setupRealTimeListener(userId) {
+            db.collection("loyaltyCards")
+                .doc(userId)
+                .onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        updateUI(data.purchases, data.points);
+                    } else {
+                        console.error("Documento no encontrado");
+                    }
+                });
+            generateQRCode(userId);
+        }
+
+        // Generar QR
+        function generateQRCode(userId) {
+            qrcodeDiv.innerHTML = "";
+            QRCode.toDataURL(
+                userId,
+                {
+                    width: 180,
+                    margin: 2,
+                },
+                function (err, url) {
+                    if (err) return console.error(err);
+                    const img = document.createElement("img");
+                    img.src = url;
+                    qrcodeDiv.appendChild(img);
+                }
+            );
+        }
+
+        // Actualizar la tarjeta
+        function updateUI(purchases, points) {
+            // Llenar círculos
+            circles.forEach((circle, index) => {
+                if (index < purchases) {
+                    circle.classList.add("filled");
+                } else {
+                    circle.classList.remove("filled");
+                }
+            });
+
+            // Mostrar puntos acumulados
+            pointsSpan.textContent = points || 0;
+
+            // Mostrar botón de canje si llega a 6 compras
+            if (purchases >= 6) {
+                redeemButton.style.display = "block";
+            } else {
+                redeemButton.style.display = "none";
+            }
+        }
+
+        // Canjear el descuento (opcional, si mantienes esta mecánica)
+        redeemButton.addEventListener("click", () => {
+            if (!userId) return;
+            const selectedDiscount = getRandomDiscount();
+            showGiftAnimation(selectedDiscount);
+
+            // Reiniciar las compras a 0
+            db.collection("loyaltyCards")
+                .doc(userId)
+                .update({
+                    purchases: 0,
+                })
+                .then(() => {
+                    message.innerText =
+                        "¡Has canjeado tu descuento! Puedes seguir acumulando compras.";
+                    setTimeout(() => {
+                        message.innerText = "";
+                    }, 3000);
+                })
+                .catch((error) => {
+                    console.error("Error al reiniciar compras:", error);
+                });
+        });
+
+        // Animación del regalo
+        function showGiftAnimation(discount) {
+            giftOverlay.style.display = "flex";
+            giftContainer.classList.add("opening");
+            discountText.innerText = discount + "% OFF";
+            // Cerrar la animación después de 5 segundos (por ejemplo)
+            setTimeout(() => {
+                giftOverlay.style.display = "none";
+                giftContainer.classList.remove("opening");
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
